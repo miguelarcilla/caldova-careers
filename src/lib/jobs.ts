@@ -7,6 +7,21 @@
  */
 import type { Job } from '../types/job';
 
+/** Return whether a job title contains the query (case-insensitively). */
+export function titleMatchesQuery(title: string, query: string): boolean {
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    if (normalizedQuery === '') {
+        return true;
+    }
+
+    return title.trim().toLocaleLowerCase().includes(normalizedQuery);
+}
+
+/** Return jobs whose titles contain the query, preserving order and input. */
+export function filterByTitle(jobs: Job[], query: string): Job[] {
+    return jobs.filter((job) => titleMatchesQuery(job.title, query));
+}
+
 /** Return jobs sorted by posted date, newest first (does not mutate input). */
 export function sortByNewest(jobs: Job[]): Job[] {
     return [...jobs].sort(
