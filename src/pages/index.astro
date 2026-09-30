@@ -29,12 +29,100 @@ const jobs: Job[] = sortByNewest(
     {jobs.length === 0 ? (
       <EmptyState text="There are no open roles right now. Check back soon." />
     ) : (
-      <div
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
-        data-testid="roles-grid"
-      >
-        {jobs.map((job) => <RoleCard job={job} />)}
-      </div>
+      <>
+        <div class="mb-6">
+          <label for="role-title-search" class="mb-2 block text-sm font-medium text-slate-200">
+            Search roles by title
+          </label>
+          <input
+            id="role-title-search"
+            type="search"
+            data-testid="role-search"
+            placeholder="e.g. Clinical Scientist"
+            class="w-full rounded-lg border border-slate-600 bg-slate-800 px-4 py-3 text-slate-100 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:max-w-xl"
+          />
+        </div>
+
+        <p
+          class="mb-4 text-sm text-slate-300"
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          data-testid="role-search-status"
+        >
+          Showing {jobs.length} {jobs.length === 1 ? 'role' : 'roles'}.
+        </p>
+
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+          data-testid="roles-grid"
+        >
+          {jobs.map((job) => <RoleCard job={job} />)}
+        </div>
+
+        <section
+          hidden
+          class="rounded-xl border border-slate-700 bg-slate-800/60 p-6"
+          aria-labelledby="role-search-empty-title"
+          data-testid="role-search-empty"
+        >
+          <h3 id="role-search-empty-title" class="text-lg font-semibold text-slate-100">
+            No roles found
+          </h3>
+          <p class="mt-2 text-slate-300">Try a different title or clear your search.</p>
+        </section>
+      </>
     )}
   </div>
 </Layout>
+
+<script>
+  import { titleMatchesQuery } from '../lib/jobs';
+
+  const searchInput = document.querySelector<HTMLInputElement>('[data-testid="role-search"]');
+
+  if (searchInput) {
+    const resultStatus = document.querySelector<HTMLElement>(
+      '[data-testid="role-search-status"]',
+    );
+    const rolesGrid = document.querySelector<HTMLElement>('[data-testid="roles-grid"]');
+    const noResults = document.querySelector<HTMLElement>(
+      '[data-testid="role-search-empty"]',
+    );
+
+    if (!resultStatus || !rolesGrid || !noResults) {
+      throw new Error('The role search interface is missing a required element.');
+    }
+
+    const roleCards = Array.from(
+      document.querySelectorAll<HTMLAnchorElement>('[data-testid="role-card"]'),
+      (card) => {
+        const title = card.dataset.roleTitle;
+        if (title === undefined) {
+          throw new Error('A role card is missing its title data attribute.');
+        }
+        return { card, title };
+      },
+    );
+
+    searchInput.addEventListener('input', () => {
+      const query = searchInput.value;
+      let visibleCount = 0;
+
+      for (const { card, title } of roleCards) {
+        const matches = titleMatchesQuery(title, query);
+        card.hidden = !matches;
+        if (matches) {
+          visibleCount += 1;
+        }
+      }
+
+      const hasNoResults = query.trim() !== '' && visibleCount === 0;
+      rolesGrid.hidden = hasNoResults;
+      noResults.hidden = !hasNoResults;
+      resultStatus.textContent = hasNoResults
+        ? 'No roles match your search.'
+        : `Showing ${visibleCount} ${visibleCount === 1 ? 'role' : 'roles'}.`;
+    });
+  }
+</script>
