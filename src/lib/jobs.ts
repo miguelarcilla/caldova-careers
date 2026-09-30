@@ -7,6 +7,13 @@
  */
 import type { Job } from '../types/job';
 
+export function getCareersSummary(jobs: Job[]): { totalRoles: number; departmentCount: number } {
+    return {
+        totalRoles: jobs.length,
+        departmentCount: new Set(jobs.map((job) => job.department)).size,
+    };
+}
+
 /** Return jobs sorted by posted date, newest first (does not mutate input). */
 export function sortByNewest(jobs: Job[]): Job[] {
     return [...jobs].sort(
