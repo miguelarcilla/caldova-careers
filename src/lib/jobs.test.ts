@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sortByNewest, formatPostedDate } from './jobs';
+import { getCareersSummary, sortByNewest, formatPostedDate } from './jobs';
 import type { Job } from '../types/job';
 
 function makeJob(slug: string, postedDate: string): Job {
@@ -14,6 +14,27 @@ function makeJob(slug: string, postedDate: string): Job {
         summary: 'A role.',
     };
 }
+
+describe('getCareersSummary', () => {
+    it('counts roles and distinct hiring departments without mutating jobs', () => {
+        const jobs = [
+            makeJob('a', '2027-01-01'),
+            makeJob('b', '2027-02-01'),
+            { ...makeJob('c', '2027-03-01'), department: 'Research & Development' },
+        ];
+
+        expect(getCareersSummary(jobs)).toEqual({ totalRoles: 3, departmentCount: 2 });
+        expect(jobs.map((job) => job.department)).toEqual([
+            'Technology',
+            'Technology',
+            'Research & Development',
+        ]);
+    });
+
+    it('returns zero counts when no roles are open', () => {
+        expect(getCareersSummary([])).toEqual({ totalRoles: 0, departmentCount: 0 });
+    });
+});
 
 describe('sortByNewest', () => {
     it('orders jobs by posted date, newest first', () => {
